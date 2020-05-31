@@ -1,9 +1,11 @@
 import numpy as np
 import torch
 
+from ..builder import BBOX_SAMPLERS
 from .random_sampler import RandomSampler
 
 
+@BBOX_SAMPLERS.register_module()
 class IoUBalancedNegSampler(RandomSampler):
     """IoU Balanced Sampling
 
@@ -73,7 +75,7 @@ class IoUBalancedNegSampler(RandomSampler):
         return sampled_inds
 
     def _sample_neg(self, assign_result, num_expected, **kwargs):
-        neg_inds = torch.nonzero(assign_result.gt_inds == 0)
+        neg_inds = torch.nonzero(assign_result.gt_inds == 0, as_tuple=False)
         if neg_inds.numel() != 0:
             neg_inds = neg_inds.squeeze(1)
         if len(neg_inds) <= num_expected:
@@ -98,6 +100,8 @@ class IoUBalancedNegSampler(RandomSampler):
                 floor_set = set()
                 iou_sampling_set = set(
                     np.where(max_overlaps > self.floor_thr)[0])
+                # for sampling interval calculation
+                self.floor_thr = 0
 
             floor_neg_inds = list(floor_set & neg_set)
             iou_sampling_neg_inds = list(iou_sampling_set & neg_set)
